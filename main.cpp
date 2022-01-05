@@ -59,4 +59,51 @@ const string KEmptyLine (KSizeLine, KEmpty);  // Une ligne vide de la matrice
 
 const unsigned KRatioMeInvaders = 4;    // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
 
-https://github.com/AyKoli/sae1.02
+/*!
+ * \brief afficherTableau
+ */
+void afficherTableau()
+{
+    ClearScreen();
+
+    char tableau[KSizeSpace][KSizeLine];
+
+    //Choix des caractères ASCII pour chaque élément du tableau
+    unsigned caraVertical = 45;
+    unsigned caraHorizontal = 124;
+    unsigned coinCadre = 43;
+
+    // Créations des bordures et du vide à l'intérieur
+    for (unsigned i = 0; i < KSizeLine; ++i)
+    {
+        for (unsigned j = 0; j < KSizeSpace; j++)
+        {
+            if (j == 0 || j == KSizeSpace - 1)
+            {
+                tableau[j][i] = caraHorizontal;
+            }
+            else if (i == 0 || i == KSizeLine - 1)
+            {
+                tableau[j][i] = caraVertical;
+            }
+            else
+            {
+                tableau[j][i] = ' ';
+            }
+        }
+    }
+
+    // Création des coins
+    tableau[0][0] = coinCadre;
+    tableau[KSizeSpace - 1][0] = coinCadre;
+    tableau[0][KSizeLine - 1] = coinCadre;
+    tableau[KSizeSpace - 1][KSizeLine - 1] = coinCadre;
+
+    // Affichage du reste du tableau
+    for (unsigned i = 0; i < KSizeLine; ++i) {
+        for (unsigned j = 0; j < KSizeSpace; ++j) {
+            cout << tableau[j][i];
+        }
+        cout << "\n";
+    }
+}
