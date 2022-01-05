@@ -59,11 +59,4 @@ const string KEmptyLine (KSizeLine, KEmpty);  // Une ligne vide de la matrice
 
 const unsigned KRatioMeInvaders = 4;    // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
 
-/*!
- * \brief DisplaySpace
- * \param Space
- */
-void  DisplaySpace (const CVString & Space)
-{
-    
-}
+https://github.com/AyKoli/sae1.02
