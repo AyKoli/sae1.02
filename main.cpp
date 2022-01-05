@@ -107,3 +107,65 @@ void afficherTableau()
         cout << "\n";
     }
 }
+
+/*!
+ * \brief coordToTable
+ * \param KSizeSpace
+ * \param posX
+ * \param posY
+ */
+unsigned coordToTable(const unsigned KSizeSpace, unsigned posX, unsigned posY)
+{
+    unsigned idCase = posX + (KSizeSpace * posY);
+    return idCase;
+}
+
+/*!
+ * \brief The invader struct
+ */
+struct invader
+{
+    unsigned id;
+    string classe;
+    unsigned posX;
+    unsigned posY;
+    unsigned caseTab = coordToTable(KSizeSpace, posX, posY);
+    bool isAlive = true;
+    unsigned hp;
+};
+
+/*!
+ * \brief creerEnnemi
+ * \param id
+ * \param classe
+ * \param posX
+ * \param posY
+ * \return 
+ */
+invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY) //note - afficher tous les invaders d'un coup, puis uniquement gérer les déplacements
+{
+    if (classe != "ranger" || "trooper" || "tank")
+    {
+        cout << "Paramètre \'classe\' invalide. Arrêt de la fonction." << endl;
+        abort();
+    }
+
+    invader vaisseauEnnemi;
+    vaisseauEnnemi.id = id;
+    vaisseauEnnemi.classe = classe;
+    vaisseauEnnemi.posX = posX;
+    vaisseauEnnemi.posY = posY;
+
+    if (classe == "ranger")
+    {
+        vaisseauEnnemi.hp = 1;
+    }
+    else if (classe == "trooper")
+    {
+        vaisseauEnnemi.hp = 2;
+    }
+    else if (classe == "tank")
+    {
+        vaisseauEnnemi.hp = 3;
+    }
+}
