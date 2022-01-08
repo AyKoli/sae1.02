@@ -60,6 +60,81 @@ const string KEmptyLine (KSizeLine, KEmpty);  // Une ligne vide de la matrice
 const unsigned KRatioMeInvaders = 4;    // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
 
 /*!
+ * \brief coordToTable
+ * \param KSizeSpace
+ * \param posX
+ * \param posY
+ */
+unsigned coordToTable(const unsigned KSizeSpace, unsigned posX, unsigned posY)
+{
+    unsigned idCase = posX + (KSizeSpace * posY);
+    return idCase;
+}
+
+/*!
+ * \brief The invader struct
+ */
+struct invader
+{
+    unsigned id;
+    string classe;
+    char carInvader;
+    unsigned posX;
+    unsigned posY;
+    unsigned caseTab = coordToTable(KSizeSpace, posX, posY);
+    bool isAlive = true;
+    unsigned hp;
+};
+
+/*!
+ * \brief creerEnnemi
+ * \param id
+ * \param classe
+ * \param posX
+ * \param posY
+ * \return
+ */
+invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY) //note - afficher tous les invaders d'un coup, puis uniquement gérer les déplacements
+{
+//    if (classe != "ranger" || "trooper" || "tank")
+//    {
+//        cout << "Paramètre \'classe\' invalide. Arrêt de la fonction." << endl;
+//        abort();
+//    }
+
+    invader vaisseauEnnemi;
+    vaisseauEnnemi.id = id;
+    vaisseauEnnemi.classe = classe;
+    vaisseauEnnemi.posX = posX;
+    vaisseauEnnemi.posY = posY;
+
+    if (classe == "ranger")
+    {
+        vaisseauEnnemi.hp = 1;
+        vaisseauEnnemi.carInvader = 'Y';
+    }
+    else if (classe == "trooper")
+    {
+        vaisseauEnnemi.hp = 2;
+        vaisseauEnnemi.carInvader = 'V';
+    }
+    else if (classe == "tank")
+    {
+        vaisseauEnnemi.hp = 3;
+        vaisseauEnnemi.carInvader = 'W';
+    }
+
+    return vaisseauEnnemi;
+}
+
+invader invaderTest = creerEnnemi(1,"trooper",1,1);
+
+void testManip()
+{
+    invaderTest.posX = invaderTest.posX + 4;
+}
+
+/*!
  * \brief afficherTableau
  */
 void afficherTableau()
@@ -88,7 +163,12 @@ void afficherTableau()
             }
             else
             {
-                tableau[j][i] = ' ';
+                if (i == invaderTest.posX && j == invaderTest.posY)
+                {
+                    tableau[j][i] = invaderTest.carInvader;
+                }
+                else
+                    tableau[j][i] = ' ';
             }
         }
     }
@@ -108,64 +188,11 @@ void afficherTableau()
     }
 }
 
-/*!
- * \brief coordToTable
- * \param KSizeSpace
- * \param posX
- * \param posY
- */
-unsigned coordToTable(const unsigned KSizeSpace, unsigned posX, unsigned posY)
+
+int main()
 {
-    unsigned idCase = posX + (KSizeSpace * posY);
-    return idCase;
-}
-
-/*!
- * \brief The invader struct
- */
-struct invader
-{
-    unsigned id;
-    string classe;
-    unsigned posX;
-    unsigned posY;
-    unsigned caseTab = coordToTable(KSizeSpace, posX, posY);
-    bool isAlive = true;
-    unsigned hp;
-};
-
-/*!
- * \brief creerEnnemi
- * \param id
- * \param classe
- * \param posX
- * \param posY
- * \return 
- */
-invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY) //note - afficher tous les invaders d'un coup, puis uniquement gérer les déplacements
-{
-    if (classe != "ranger" || "trooper" || "tank")
-    {
-        cout << "Paramètre \'classe\' invalide. Arrêt de la fonction." << endl;
-        abort();
-    }
-
-    invader vaisseauEnnemi;
-    vaisseauEnnemi.id = id;
-    vaisseauEnnemi.classe = classe;
-    vaisseauEnnemi.posX = posX;
-    vaisseauEnnemi.posY = posY;
-
-    if (classe == "ranger")
-    {
-        vaisseauEnnemi.hp = 1;
-    }
-    else if (classe == "trooper")
-    {
-        vaisseauEnnemi.hp = 2;
-    }
-    else if (classe == "tank")
-    {
-        vaisseauEnnemi.hp = 3;
-    }
+    // Je veux un tableau qui fait 15 cases de large et 10 de haut
+    testManip();
+    afficherTableau();
+    return 0;
 }
