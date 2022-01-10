@@ -5,24 +5,27 @@
 
 using namespace std;
 
-void ClearScreen ()
+void ClearScreen () // // Fonction qui permet d'éffacer l'écran
 {
     cout << "\033[H\033[2J";
 }
 
-const string KReset   ("0");
-const string KBlack    ("30");
-const string KRed   ("31");
-const string KGreen    ("32");
-const string KYellow   ("33");
-const string KBlue    ("34");
-const string KMagenta ("35");
-const string KCyan    ("36");
+//  Définition des couleurs
+const string KReset     ("0") ;
+const string KBlack     ("30");
+const string KRed       ("31");
+const string KGreen     ("32");
+const string KYellow    ("33");
+const string KBlue      ("34");
+const string KMagenta   ("35");
+const string KCyan      ("36");
 
 void Couleur (const string & coul)
 {
     cout << "\033[" << coul <<"m";
 }
+
+// Définition de la représentation graphique de chaque élément
 
 const char KEmpty               = ' ';  // case vide de l'écran
 const char KRight               = 'd';  // déplacement vers la droite
@@ -67,6 +70,8 @@ const unsigned KRatioMeInvaders = 4;    // Nombre de fois où c'est le tour du j
  * \param posX
  * \param posY
  */
+
+// Variable qui créer identifiant pour chaque case de gauche a droite
 unsigned coordToTable(const unsigned nColonnes, unsigned posX, unsigned posY)
 {
     unsigned idCase = posX + (nColonnes * posY);
@@ -78,10 +83,10 @@ unsigned coordToTable(const unsigned nColonnes, unsigned posX, unsigned posY)
  */
 struct missile
 {
-    char carMissile;
-    unsigned posX;
-    unsigned posY;
-    bool isAlive;
+    char carMissile;  
+    unsigned posX; // Position sur les abscisses 
+    unsigned posY; // Position sur les ordonnés
+    bool isAlive; 
     unsigned caseTab = coordToTable(nColonnes, posX, posY);
 };
 
@@ -107,12 +112,12 @@ missile Missile = creerMissile(0,0);    // Creation du missile
  */
 struct vaisseau
 {
-    char carVaisseau;
+    char carVaisseau; 
     unsigned posX;
     unsigned posY;
     bool isAlive;
     unsigned caseTab = coordToTable(nColonnes, posX, posY);
-    unsigned pv;
+    unsigned pv; // Nombre de point de vie du vaisseau
 };
 
 /*!
@@ -124,6 +129,8 @@ struct vaisseau
 vaisseau creerVaisseau(unsigned posX, unsigned posY){
     vaisseau MyPerso;
     MyPerso.carVaisseau = KInsideMe;
+    // Création de difficultés 
+    
     if (Difficulty == "facile"){
         MyPerso.pv = 6;
     }
@@ -143,14 +150,14 @@ vaisseau creerVaisseau(unsigned posX, unsigned posY){
  */
 struct invader
 {
-    unsigned id;
+    unsigned id; // Identifiant de l'Invader
     string classe;
     char carInvader;
     unsigned posX;
     unsigned posY;
     unsigned caseTab = coordToTable(nColonnes, posX, posY);
     bool isAlive = true;
-    unsigned hp;
+    unsigned hp; // Nombre de points de vie 
 };
 
 /*!
@@ -175,10 +182,12 @@ invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY) //
     vaisseauEnnemi.posX = posX;
     vaisseauEnnemi.posY = posY;
 
+    // Création de classe pour les Invaders avec leurs caractéristiques 
+    
     if (classe == "ranger")
     {
-        vaisseauEnnemi.hp = 1;
-        vaisseauEnnemi.carInvader = 'Y';
+        vaisseauEnnemi.hp = 1;           // Point de vie du "ranger"
+        vaisseauEnnemi.carInvader = 'Y'; // Forme du "ranger" 
     }
     else if (classe == "trooper")
     {
@@ -194,7 +203,7 @@ invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY) //
     return vaisseauEnnemi;
 }
     
-vaisseau MyHero = creerVaisseau(10, 20);
+vaisseau MyHero = creerVaisseau(10, 20); // Création du vaisseau avec ses coordonnées 
 vector<invader> iterInvader (unsigned n)
 {
     vector<invader> listeEnnemi;
@@ -203,7 +212,7 @@ vector<invader> iterInvader (unsigned n)
     unsigned ligne = 1;
     for (unsigned i = 0; i < n; ++i)
     {
-        listeEnnemi.push_back(creerEnnemi(i,"ranger", colonne, ligne));
+        listeEnnemi.push_back(creerEnnemi(i,"ranger", colonne, ligne)); // Création d'une case en plus 
         ++cptLigne;
         ++colonne;
         if (cptLigne == nColonnes-1)
@@ -224,41 +233,41 @@ void afficherTableau()
 {
     ClearScreen();
 
-    char tableau[nColonnes][nLignes];
+    char tableau[nColonnes][nLignes]; // Création de la matrice
 
     //Choix des caractères ASCII pour chaque élément du tableau
-    unsigned caraVertical = 45;
-    unsigned caraHorizontal = 124;
-    unsigned coinCadre = 43;
+    unsigned caraVertical = 45; // Caractère -
+    unsigned caraHorizontal = 124; // Caractère |
+    unsigned coinCadre = 43; // Caractère +
 
     // Créations des bordures et du vide à l'intérieur
-    for (unsigned i = 0; i < nLignes; ++i)
+    for (unsigned i = 0; i < nLignes; ++i) 
     {
-        for (unsigned j = 0; j < nColonnes; j++)
+        for (unsigned j = 0; j < nColonnes; j++) // Boucle dans une boucle afin de parcourir tous les éléments du tableau
         {
             if (j == 0 || j == nColonnes - 1)
             {
-                tableau[j][i] = caraHorizontal;
+                tableau[j][i] = caraHorizontal; // Affichage des cotés de la matrice
             }
             else if (i == 0 || i == nLignes - 1)
             {
-                tableau[j][i] = caraVertical;
+                tableau[j][i] = caraVertical; // Affichage de haut ainsi que du bas de la matrice
             }
             else
             {
                 if (j == invaderTest.posX && i == invaderTest.posY)
                 {
                     if(invaderTest.isAlive == true){
-                        tableau[j][i] = invaderTest.carInvader;
+                        tableau[j][i] = invaderTest.carInvader; // Affichage de l'Invader
                     }
                     else{
-                        tableau[j][i] = ' ';
+                        tableau[j][i] = ' '; // Affichage d'espaces dans la matrice pour faire du vide
                     }
                 }
                 else if (j == MyHero.posX && i == MyHero.posY)
                 {
                     if(MyHero.isAlive == true){
-                        tableau[j][i] = MyHero.carVaisseau;
+                        tableau[j][i] = MyHero.carVaisseau; // Affichage du vaisseau
                     }
                     else{
                         tableau[j][i] = ' ';
@@ -268,7 +277,7 @@ void afficherTableau()
                 else if((j == Missile.posX && i == Missile.posY))
                 {
                     if(Missile.isAlive == true){
-                        tableau[j][i] = Missile.carMissile;
+                        tableau[j][i] = Missile.carMissile; // Affichage du missile
                     }
                     else{
                         tableau[j][i] = ' ';
@@ -281,14 +290,14 @@ void afficherTableau()
     }
 
     // Création des coins
-    tableau[0][0] = coinCadre;
-    tableau[nColonnes - 1][0] = coinCadre;
-    tableau[0][nLignes - 1] = coinCadre;
-    tableau[nColonnes - 1][nLignes - 1] = coinCadre;
+    tableau[0][0] = coinCadre; // Affichage du coin en haut à gauche
+    tableau[nColonnes - 1][0] = coinCadre; // Affichage du coin en haut à droite
+    tableau[0][nLignes - 1] = coinCadre; // Affichage du coin en bas à gauche
+    tableau[nColonnes - 1][nLignes - 1] = coinCadre; // Affichage du coin en bas à droite
 
     // Affichage du reste du tableau
     for (unsigned i = 0; i < nLignes; ++i) {
-        for (unsigned j = 0; j < nColonnes; ++j) {
+        for (unsigned j = 0; j < nColonnes; ++j) { // Boucle dans une boucle afin de parcourir tout le tableau d'afficher tout
             cout << tableau[j][i];
         }
         cout << "\n";
@@ -326,18 +335,18 @@ void manageHero(){
         cin >> Key;
         cout << Key;
         if( MyHero.posX < 20 && MyHero.posX > 0 ){
-            if( Key == KLeft){
+            if( Key == KLeft){ // Si la la touche pour aller à gauche est présée : il  ira gauche
 
                 MyHero.posX = MyHero.posX - 1;
                 afficherTableau();
             }
-            else if( Key == KRight){
+            else if( Key == KRight){ // Si la touche pour aller à droite est présée : il ira à droite
                 MyHero.posX = MyHero.posX + 1;
                 afficherTableau();
             }
-            else if( Key == KShoot){
+            else if( Key == KShoot){ // Si la touche pour tirer le missile est présée : il tirera un missile 
                 Shoot();
-                afficherTableau();
+                afficherTableau(); 
             }
 
         }
