@@ -23,9 +23,9 @@ void Couleur (const string & coul)
 }
 
 const char KEmpty               = ' ';  // case vide de l'écran
-const char KRight               = '6';  // déplacement vers la droite
-const char KLeft                = '4';  // Déplacement vers la gauche
-const char KShoot               = '5';  // Lancer de torpille
+const char KRight               = 'd';  // déplacement vers la droite
+const char KLeft                = 'q';  // Déplacement vers la gauche
+const char KShoot               = 's';  // Lancer de torpille
 
 //  Constantes liées à l'envahisseur
 
@@ -47,8 +47,8 @@ const string KMyForm (KMySize, KInsideMe);
 
 // Constantes liées à l'eapace (l'écran)
 
-const unsigned nLignes   = 4+2;   // Nombre de lignes de l'écran (de l'espace)
-const unsigned nColonnes  = 4+2;   // Nombre de colonnes de l'écran (de l'espace)
+const unsigned nLignes   = 20+2;   // Nombre de lignes de l'écran (de l'espace)
+const unsigned nColonnes  = 20+2;   // Nombre de colonnes de l'écran (de l'espace)
 
 const unsigned KBegInvader = 0;    // Numéro de colonne où commence l'envahisseur
 const unsigned KBegMe = nLignes / 2;  // Numéro de colonne où commence le joueur
@@ -71,6 +71,71 @@ unsigned coordToTable(const unsigned nColonnes, unsigned posX, unsigned posY)
     return idCase;
 }
 
+/*!
+ * \brief The hero struct
+ */
+struct missile
+{
+    char carMissile;
+    unsigned posX;
+    unsigned posY;
+    bool isAlive;
+    unsigned caseTab = coordToTable(nColonnes, posX, posY);
+};
+
+/*!
+ * \brief creerMissile
+ * \param posX
+ * \param posY
+ * \return missile
+ */
+missile creerMissile(unsigned posX, unsigned posY){
+    missile MyMissile;
+    MyMissile.carMissile = KTorpedo;
+    MyMissile.posX = posX;
+    MyMissile.posY = posY;
+    MyMissile.isAlive = false;
+    return MyMissile;
+}
+
+missile Missile = creerMissile(0,0);    // Creation du missile
+
+/*!
+ * \brief The hero struct
+ */
+struct vaisseau
+{
+    char carVaisseau;
+    unsigned posX;
+    unsigned posY;
+    bool isAlive;
+    unsigned caseTab = coordToTable(nColonnes, posX, posY);
+    unsigned pv;
+};
+
+/*!
+ * \brief creerVaisseau
+ * \param posX
+ * \param posY
+ * \return vaisseau
+ */
+vaisseau creerVaisseau(unsigned posX, unsigned posY){
+    vaisseau MyPerso;
+    MyPerso.carVaisseau = KInsideMe;
+    if (Difficulty == "facile"){
+        MyPerso.pv = 6;
+    }
+    if (Difficulty == "normal"){
+        MyPerso.pv = 3;
+    }
+    if (Difficulty == "difficile"){
+        MyPerso.pv = 2;
+    }
+    MyPerso.posX = posX;
+    MyPerso.posY = posY;
+    MyPerso.isAlive = true;
+    return MyPerso;
+    
 /*!
  * \brief The invader struct
  */
@@ -126,7 +191,8 @@ invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY) //
 
     return vaisseauEnnemi;
 }
-
+    
+vaisseau MyHero = creerVaisseau(10, 20);
 vector<invader> iterInvader (unsigned n)
 {
     vector<invader> listeEnnemi;
@@ -152,7 +218,7 @@ vector<invader> iterInvader (unsigned n)
 /*!
  * \brief afficherTableau
  */
-void afficherTableau(vector<invader> listeInvader)
+void afficherTableau()
 {
     ClearScreen();
 
@@ -178,14 +244,36 @@ void afficherTableau(vector<invader> listeInvader)
             }
             else
             {
-                tableau[j][i] = ' ';
-                for (unsigned k = 0; k < listeInvader.size(); ++k)
+                if (j == invaderTest.posX && i == invaderTest.posY)
                 {
-                    if (j == listeInvader[k].posX && i == listeInvader[k].posY)
-                    {
-                        tableau[j][i] = listeInvader[k].carInvader;
+                    if(invaderTest.isAlive == true){
+                        tableau[j][i] = invaderTest.carInvader;
+                    }
+                    else{
+                        tableau[j][i] = ' ';
                     }
                 }
+                else if (j == MyHero.posX && i == MyHero.posY)
+                {
+                    if(MyHero.isAlive == true){
+                        tableau[j][i] = MyHero.carVaisseau;
+                    }
+                    else{
+                        tableau[j][i] = ' ';
+                    }
+
+                }
+                else if((j == Missile.posX && i == Missile.posY))
+                {
+                    if(Missile.isAlive == true){
+                        tableau[j][i] = Missile.carMissile;
+                    }
+                    else{
+                        tableau[j][i] = ' ';
+                    }
+                }
+                else
+                    tableau[j][i] = ' ';
             }
         }
     }
@@ -197,8 +285,7 @@ void afficherTableau(vector<invader> listeInvader)
     tableau[nColonnes - 1][nLignes - 1] = coinCadre;
 
     // Affichage du reste du tableau
-    for (unsigned i = 0; i < nLignes; ++i)
-    {
+    for (unsigned i = 0; i < nLignes; ++i) {
         for (unsigned j = 0; j < nColonnes; ++j) {
             cout << tableau[j][i];
         }
@@ -206,6 +293,54 @@ void afficherTableau(vector<invader> listeInvader)
     }
 }
 
+/*!
+ * \brief Shoot
+ */
+void Shoot(){
+  Missile.isAlive = true;
+  Missile.posY = MyHero.posY -1;
+  Missile.posX = MyHero.posX;
+  while (Missile.posY > 0){
+     --Missile.posY;
+     if(Missile.posX == invaderTest.posX && Missile.posY == invaderTest.posY && Missile.isAlive == true && invaderTest.isAlive == true ){
+         Missile.isAlive = false;
+         --invaderTest.hp;
+         if(invaderTest.hp == 0){
+             invaderTest.isAlive = false;
+         }
+     }
+     afficherTableau();
+     this_thread::sleep_for(framerate);
+   }
+
+}
+
+/*!
+ * \brief deplacementHero
+ */
+void manageHero(){
+    char Key;
+    for( unsigned i = 0; i<10; i++){
+        cin >> Key;
+        cout << Key;
+        if( MyHero.posX < 20 && MyHero.posX > 0 ){
+            if( Key == KLeft){
+
+                MyHero.posX = MyHero.posX - 1;
+                afficherTableau();
+            }
+            else if( Key == KRight){
+                MyHero.posX = MyHero.posX + 1;
+                afficherTableau();
+            }
+            else if( Key == KShoot){
+                Shoot();
+                afficherTableau();
+            }
+
+        }
+    }
+}
 
 int main()
 {
