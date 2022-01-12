@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <random>
 #include <chrono>
 #include <thread>
 #include <unistd.h>
@@ -21,6 +23,13 @@ const string KYellow   ("33");
 const string KBlue    ("34");
 const string KMagenta ("35");
 const string KCyan    ("36");
+const string KbBlack    ("90");
+const string KbRed    ("91");
+const string KbGreen    ("92");
+const string KbYellow   ("93");
+const string KbBlue     ("94");
+const string KbMagenta ("95");
+const string KbCyan ("96");
 
 void Couleur (const string & coul)
 {
@@ -53,8 +62,8 @@ const string KMyForm (KMySize, KInsideMe);
 
 // Constantes liées à l'eapace (l'écran)
 
-const unsigned nLignes   = 20+2;   // Nombre de lignes de l'écran (de l'espace)
-const unsigned nColonnes  = 20+2;   // Nombre de colonnes de l'écran (de l'espace)
+const unsigned nLignes   = 5+2;   // Nombre de lignes de l'écran (de l'espace)
+const unsigned nColonnes  = 25+2;   // Nombre de colonnes de l'écran (de l'espace)
 
 const unsigned KBegInvader = 0;    // Numéro de colonne où commence l'envahisseur
 const unsigned KBegMe = nLignes / 2;  // Numéro de colonne où commence le joueur
@@ -63,9 +72,10 @@ typedef vector <string> CVString;    // c'est le type de l'écran (l'espace, la 
 
 const string KEmptyLine (nLignes, KEmpty);  // Une ligne vide de la matrice
 
-const unsigned KRatioMeInvaders = 4;    // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
+const unsigned KRatioMeInvaders = 4; // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
+unsigned KTour = 1;
 
-chrono::milliseconds framerate(200);
+chrono::milliseconds framerate(10);
 
 struct termios saved_attributes;
 
@@ -98,8 +108,6 @@ void set_input_mode (void) // Fonction TP 10 pour mode non canonique
   tattr.c_cc[VTIME] = 5;
   tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
 }
-
-
 
 
 /*!
@@ -246,39 +254,49 @@ vaisseau MyHero = creerVaisseau(10, 5); // Création du vaisseau de notre person
  * \param n
  * \return listeEnnemi
  */
-vector<invader> iterInvader (unsigned n)
+vector<invader> iterInvader ()
 {
     vector<invader> listeEnnemi;
     unsigned colonne = 1;
     unsigned cptLigne = 1;
     unsigned ligne = 1;
     string sensMove = "droite";
-    for (unsigned i = 0; i < n; ++i)
+    string invaderClass;
+    unsigned seed;
+    srand(time(NULL));
+    for (unsigned i = 0; i < (nColonnes-2)*2; ++i)
     {
-        listeEnnemi.push_back(creerEnnemi(i,"ranger", colonne, ligne, sensMove));
-        ++cptLigne;
-        if (ligne % 2 == 0)
-        {
-            --colonne;
-        }
+        seed = rand() % 100 + 1;
+        if (seed > 1 && seed < 76)
+            invaderClass = "trooper";
+        else if (seed > 76 && seed < 96)
+            invaderClass = "ranger";
         else
+            invaderClass = "tank";
+
+        if (i == 0)
+            listeEnnemi.push_back(creerEnnemi(0,invaderClass,1,1,"droite"));
+
+        else if (listeEnnemi[i-1].posX + 1 == nColonnes)
         {
-            ++colonne;
-        }
-        if (cptLigne == nColonnes-1)
-        {
-            cptLigne = 1;
-            ++ligne;
             if (ligne % 2 == 0)
             {
-                colonne = nColonnes-2;
                 sensMove = "gauche";
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass,nColonnes,listeEnnemi[i-1].posY+1,sensMove));
             }
             else
             {
-                colonne = 1;
                 sensMove = "droite";
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass, 1, listeEnnemi[i-1].posY+1, sensMove));
             }
+         }
+
+        else
+        {
+            if (sensMove == "droite")
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass, listeEnnemi[i-1].posX+2, listeEnnemi[i-1].posY, sensMove));
+            else
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass, listeEnnemi[i-1].posX-2, listeEnnemi[i-1].posY, sensMove));
         }
     }
     return listeEnnemi;
@@ -286,41 +304,46 @@ vector<invader> iterInvader (unsigned n)
 
 
 
-vector <invader> listeEnnemi = iterInvader(40); // Création des invaders
+vector <invader> listeEnnemi = iterInvader(); // Création des invaders
 
 /*!
  * \brief manageInvaders
  */
 void manageInvaders ()
 {
-
-    for (unsigned i = 0; i < listeEnnemi.size(); ++i)
+    if (KTour == 4)
     {
-        if(listeEnnemi[i].sensMove == "droite")
+        for (unsigned i = 0; i < listeEnnemi.size(); ++i)
         {
-            if (listeEnnemi[i].posX+1 == nColonnes-1)
+            if(listeEnnemi[i].sensMove == "droite")
             {
-                listeEnnemi[i].posY = listeEnnemi[i].posY + 1;
-                listeEnnemi[i].sensMove = "gauche";
+                if (listeEnnemi[i].posX+1 == nColonnes-1)
+                {
+                    listeEnnemi[i].posY = listeEnnemi[i].posY + 1;
+                    listeEnnemi[i].sensMove = "gauche";
+                }
+                else
+                {
+                    listeEnnemi[i].posX = listeEnnemi[i].posX + 1;
+                }
             }
             else
             {
-                listeEnnemi[i].posX = listeEnnemi[i].posX + 1;
+                if (listeEnnemi[i].posX-1 == 0)
+                {
+                    listeEnnemi[i].posY = listeEnnemi[i].posY + 1;
+                    listeEnnemi[i].sensMove = "droite";
+                }
+                else
+                {
+                    listeEnnemi[i].posX = listeEnnemi[i].posX - 1;
+                }
             }
         }
-        else
-        {
-            if (listeEnnemi[i].posX-1 == 0)
-            {
-                listeEnnemi[i].posY = listeEnnemi[i].posY + 1;
-                listeEnnemi[i].sensMove = "droite";
-            }
-            else
-            {
-                listeEnnemi[i].posX = listeEnnemi[i].posX - 1;
-            }
-        }
+        KTour = 0;
     }
+    else
+        ++KTour;
 }
 /*!
  * \brief afficherTableau
@@ -411,10 +434,8 @@ void afficherTableau(){
  * \param listeEnnemi
  */
 void Shoot(){
-  Missile.isAlive = true;
-  Missile.posY = MyHero.posY -1;
-  Missile.posX = MyHero.posX;
-  while (Missile.isAlive == true){
+
+  if (Missile.isAlive == true){
      --Missile.posY;
 
       for (unsigned k = 0; k < listeEnnemi.size(); ++k)
@@ -426,15 +447,11 @@ void Shoot(){
             --listeEnnemi[k].hp;
             if(listeEnnemi[k].hp == 0){
                 listeEnnemi[k].isAlive = false;
-                listeEnnemi[k].posX = 0;
-                listeEnnemi[k].posY = 0;
             }
         }
       if(Missile.posY == 0){
           Missile.isAlive = false;
       }
-     afficherTableau();
-     this_thread::sleep_for(framerate);
    }
 }
 
@@ -457,6 +474,9 @@ void manageHero(){
                 afficherTableau();
             }
             else if( Key == KShoot){
+                Missile.isAlive = true;
+                Missile.posY = MyHero.posY+1;
+                Missile.posX = MyHero.posX;
                 Shoot();
                 afficherTableau();
             }
@@ -473,6 +493,7 @@ int main()
         {
             manageHero();
             manageInvaders();
+            Shoot();
             afficherTableau();
             for (unsigned i = 0; i < listeEnnemi.size(); ++i)
             {
@@ -481,6 +502,7 @@ int main()
                     gameOver = true;
                     cout << "c fini chacal";
                 }
+
             }
             this_thread::sleep_for(framerate);
         }
