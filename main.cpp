@@ -1,81 +1,100 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <map>
 #include <cmath>
 #include <random>
-#include <chrono>
-#include <thread>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
+#include <fstream>
+
 using namespace std;
 
-void ClearScreen ()
-{
-    cout << "\033[H\033[2J";
+char lectureConfigChar (string paramConfig){
+    ifstream ifs ("../SpaceInvaders/config.yaml");
+    //si le fichier n'existe pas
+    if (!ifs){
+        cerr << "fichier n'existe pas" <<endl;
+        //on arrete le pgm
+        exit (-1);
+    }
+    for (string str; ifs >> str ; ){
+        if(str == paramConfig){
+        //on extrait le ':'
+        char deuxPoint;
+        ifs >> deuxPoint;
+        if (deuxPoint != ':') {
+            cerr << "mauvais caractère" <<endl;
+            //on arrete le pgm
+            exit (-1);
+        }
+        getline (ifs, str);
+        str.erase(0, 1);
+        //str = str.substr(1, str.size());
+        char valeur = str[0];
+        return valeur;
+        }
+    }
+    ifs.close();
 }
 
-const string KReset   ("0");
-const string KBlack    ("30");
-const string KRed   ("31");
-const string KGreen    ("32");
-const string KYellow   ("33");
-const string KBlue    ("34");
-const string KMagenta ("35");
-const string KCyan    ("36");
-const string KbBlack    ("90");
-const string KbRed    ("91");
-const string KbGreen    ("92");
-const string KbYellow   ("93");
-const string KbBlue     ("94");
-const string KbMagenta ("95");
-const string KbCyan ("96");
-
-void Couleur (const string & coul)
-{
-    cout << "\033[" << coul <<"m";
+string lectureConfigString (string paramConfig){
+    ifstream ifs ("../SpaceInvaders/config.yaml");
+    //si le fichier n'existe pas
+    if (!ifs){
+        cerr << "fichier n'existe pas" <<endl;
+        //on arrete le pgm
+        exit (-1);
+    }
+    for (string str; ifs >> str ; ){
+        if(str == paramConfig){
+        //on extrait le ':'
+        char deuxPoint;
+        ifs >> deuxPoint;
+        if (deuxPoint != ':') {
+            cerr << "mauvais caractère" <<endl;
+            //on arrete le pgm
+            exit (-1);
+        }
+        getline (ifs, str);
+        str.erase(0, 1);
+        //str = str.substr(1, str.size());
+        string valeur = str;
+        return valeur;
+        }
+    }
+    ifs.close();
 }
 
-const char KEmpty               = ' ';  // case vide de l'écran
-const char KRight               = 'd';  // déplacement vers la droite
-const char KLeft                = 'q';  // Déplacement vers la gauche
-const char KShoot               = 's';  // Lancer de torpille
+const char KRight               = lectureConfigChar("DROITE");  // Déplacement vers la droite
+const char KLeft                = lectureConfigChar("GAUCHE");  // Déplacement vers la gauche
+const char KShoot               = lectureConfigChar("TIRER");  // Lancer de torpille
 
 //  Constantes liées à l'envahisseur
 
-const string KInvadersColor (KYellow);  // Couleur de l'envahisseur
-const char KInsideInvader       = 'W';  // caractèrere formant l'envahisseur
-const char KMissile             = 'T';  // missile
-const unsigned KInvadersSize    =  4;   // nombre de caractères qui forment l'envahisseur
-const unsigned KInvadersMiddle  = KInvadersSize / 2;
-const string KInvadersForm (KInvadersSize, KInsideInvader);  // forme de l'envahisseur
+const char KTrooper = lectureConfigChar("TROOPER"); //Forme du trooper
+const char KRanger = lectureConfigChar("RANGER"); //Forme du ranger
+const char KTank = lectureConfigChar("TANK");
+const char KTorpedo = lectureConfigChar("TORPILLE");
+const char KBalle = lectureConfigChar("BALLE");
 
 // Constantes liées au joueur
 
-const string KMyColor (KGreen);
-const char KInsideMe            = 'A';
-const char KTorpedo             = '|';
-const string Difficulty ("facile");
-const unsigned KMySize          = 1;
-const unsigned KMyMiddle        = KMySize / 2;
-const string KMyForm (KMySize, KInsideMe);
+const string Difficulty (lectureConfigString("DIFFICULTE"));
+const char KJoueur = 'A';
+const char KMissile = '|';
 
 // Constantes liées à l'eapace (l'écran)
 
-const unsigned nLignes   = 5+2;   // Nombre de lignes de l'écran (de l'espace)
-const unsigned nColonnes  = 25+2;   // Nombre de colonnes de l'écran (de l'espace)
+const unsigned nLignes   = 10+2;   // Nombre de lignes de l'écran (de l'espace)
+const unsigned nColonnes  = 15+2;   // Nombre de colonnes de l'écran (de l'espace)
 
-const unsigned KBegInvader = 0;    // Numéro de colonne où commence l'envahisseur
-const unsigned KBegMe = nLignes / 2;  // Numéro de colonne où commence le joueur
 
-typedef vector <string> CVString;    // c'est le type de l'écran (l'espace, la matrice)
-
-const string KEmptyLine (nLignes, KEmpty);  // Une ligne vide de la matrice
-
-const unsigned KRatioMeInvaders = 4; // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
+unsigned KRatioMeInvaders = 4; // Nombre de fois où c'est le tour du joueur pour un tour de l'envahisseur
 unsigned KTour = 1;
 
-chrono::milliseconds framerate(10);
 
 struct termios saved_attributes;
 
@@ -88,8 +107,6 @@ reset_input_mode (void)
 void set_input_mode (void) // Fonction TP 10 pour mode non canonique
 {
   struct termios tattr;
-  char *name;
-
   /* Make sure stdin is a terminal. */
   if (!isatty (STDIN_FILENO))
     {
@@ -105,21 +122,8 @@ void set_input_mode (void) // Fonction TP 10 pour mode non canonique
   tcgetattr (STDIN_FILENO, &tattr);
   tattr.c_lflag &= ~(ICANON|ECHO); /* Clear ICANON and ECHO. */
   tattr.c_cc[VMIN] = 0;
-  tattr.c_cc[VTIME] = 5;
+  tattr.c_cc[VTIME] = 4;
   tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
-}
-
-
-/*!
- * \brief coordToTable
- * \param nColonnes
- * \param posX
- * \param posY
- */
-unsigned coordToTable(const unsigned nColonnes, unsigned posX, unsigned posY)
-{
-    unsigned idCase = posX + (nColonnes * posY);
-    return idCase;
 }
 
 /*!
@@ -131,7 +135,6 @@ struct missile
     unsigned posX;
     unsigned posY;
     bool isAlive;
-    unsigned caseTab = coordToTable(nColonnes, posX, posY);
 };
 
 /*!
@@ -142,7 +145,7 @@ struct missile
  */
 missile creerMissile(unsigned posX, unsigned posY){
     missile MyMissile;
-    MyMissile.carMissile = KTorpedo;
+    MyMissile.carMissile = KMissile;
     MyMissile.posX = posX;
     MyMissile.posY = posY;
     MyMissile.isAlive = false;
@@ -160,7 +163,6 @@ struct vaisseau
     unsigned posX;
     unsigned posY;
     bool isAlive;
-    unsigned caseTab = coordToTable(nColonnes, posX, posY);
     unsigned pv;
 };
 
@@ -172,7 +174,7 @@ struct vaisseau
  */
 vaisseau creerVaisseau(unsigned posX, unsigned posY){
     vaisseau MyPerso;
-    MyPerso.carVaisseau = KInsideMe;
+    MyPerso.carVaisseau = KJoueur;
     if (Difficulty == "facile"){
         MyPerso.pv = 6;
     }
@@ -180,7 +182,7 @@ vaisseau creerVaisseau(unsigned posX, unsigned posY){
         MyPerso.pv = 3;
     }
     if (Difficulty == "difficile"){
-        MyPerso.pv = 2;
+        MyPerso.pv = 1;
     }
     MyPerso.posX = posX;
     MyPerso.posY = posY;
@@ -198,7 +200,6 @@ struct invader
     unsigned posX;
     unsigned posY;
     string sensMove = "droite";
-    unsigned caseTab = coordToTable(nColonnes, posX, posY);
     bool isAlive = true;
     unsigned hp;
 };
@@ -214,12 +215,6 @@ struct invader
  */
 invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY, string sensMove) //note - afficher tous les invaders d'un coup, puis uniquement gérer les déplacements
 {
-//    if (classe != "ranger" || "trooper" || "tank")
-//    {
-//        cout << "Paramètre \'classe\' invalide. Arrêt de la fonction." << endl;
-//        abort();
-//    }
-
     invader vaisseauEnnemi;
     vaisseauEnnemi.id = id;
     vaisseauEnnemi.classe = classe;
@@ -230,24 +225,24 @@ invader creerEnnemi(unsigned id, string classe, unsigned posX, unsigned posY, st
     if (classe == "ranger")
     {
         vaisseauEnnemi.hp = 1;
-        vaisseauEnnemi.carInvader = 'Y';
+        vaisseauEnnemi.carInvader = KRanger;
     }
     else if (classe == "trooper")
     {
         vaisseauEnnemi.hp = 2;
-        vaisseauEnnemi.carInvader = 'V';
+        vaisseauEnnemi.carInvader = KTrooper;
     }
     else if (classe == "tank")
     {
-        vaisseauEnnemi.hp = 3;
-        vaisseauEnnemi.carInvader = 'W';
+        vaisseauEnnemi.hp = 5;
+        vaisseauEnnemi.carInvader = KTank;
     }
 
     return vaisseauEnnemi;
 }
 
-int score = 0; // Initialision du score
-vaisseau MyHero = creerVaisseau(10, 5); // Création du vaisseau de notre personnage
+unsigned score = 0; // Initialision du score
+vaisseau vaisseauJoueur = creerVaisseau(nColonnes / 2, nLignes - 2); // Création du vaisseau de notre personnage
 
 /*!
  * \brief iterInvader
@@ -257,19 +252,22 @@ vaisseau MyHero = creerVaisseau(10, 5); // Création du vaisseau de notre person
 vector<invader> iterInvader ()
 {
     vector<invader> listeEnnemi;
-    unsigned colonne = 1;
-    unsigned cptLigne = 1;
     unsigned ligne = 1;
+    unsigned tabEstImpair = 0;
     string sensMove = "droite";
     string invaderClass;
     unsigned seed;
     srand(time(NULL));
-    for (unsigned i = 0; i < (nColonnes-2)*2; ++i)
+
+    if (nColonnes % 2 != 0)
+        tabEstImpair = 1;
+
+    for (unsigned i = 0; i < (nColonnes - 2)*1.5; ++i)
     {
         seed = rand() % 100 + 1;
-        if (seed > 1 && seed < 76)
+        if (seed > 1 && seed < 51)
             invaderClass = "trooper";
-        else if (seed > 76 && seed < 96)
+        else if (seed > 51 && seed < 81)
             invaderClass = "ranger";
         else
             invaderClass = "tank";
@@ -277,31 +275,36 @@ vector<invader> iterInvader ()
         if (i == 0)
             listeEnnemi.push_back(creerEnnemi(0,invaderClass,1,1,"droite"));
 
-        else if (listeEnnemi[i-1].posX + 1 == nColonnes)
+        else if (ligne % 2 == 0)
         {
-            if (ligne % 2 == 0)
+            if (listeEnnemi[i-1].posX - 2 + tabEstImpair < 1 + tabEstImpair)
             {
-                sensMove = "gauche";
-                listeEnnemi.push_back(creerEnnemi(i,invaderClass,nColonnes,listeEnnemi[i-1].posY+1,sensMove));
+                sensMove = "droite";
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass,1,listeEnnemi[i-1].posY+1,sensMove));
+                ++ligne;
             }
             else
             {
-                sensMove = "droite";
-                listeEnnemi.push_back(creerEnnemi(i,invaderClass, 1, listeEnnemi[i-1].posY+1, sensMove));
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass, listeEnnemi[i-1].posX-2, listeEnnemi[i-1].posY, sensMove));
             }
          }
 
         else
         {
-            if (sensMove == "droite")
-                listeEnnemi.push_back(creerEnnemi(i,invaderClass, listeEnnemi[i-1].posX+2, listeEnnemi[i-1].posY, sensMove));
+            if (listeEnnemi[i-1].posX + 1 >= nColonnes - 2)
+            {
+                sensMove = "gauche";
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass,nColonnes - 2 - tabEstImpair,listeEnnemi[i-1].posY+1,sensMove));
+                ++ligne;
+            }
             else
-                listeEnnemi.push_back(creerEnnemi(i,invaderClass, listeEnnemi[i-1].posX-2, listeEnnemi[i-1].posY, sensMove));
+            {
+                listeEnnemi.push_back(creerEnnemi(i,invaderClass, listeEnnemi[i-1].posX+2, listeEnnemi[i-1].posY, sensMove));
+            }
         }
     }
     return listeEnnemi;
 }
-
 
 
 vector <invader> listeEnnemi = iterInvader(); // Création des invaders
@@ -311,7 +314,7 @@ vector <invader> listeEnnemi = iterInvader(); // Création des invaders
  */
 void manageInvaders ()
 {
-    if (KTour == 4)
+    if (KTour == KRatioMeInvaders)
     {
         for (unsigned i = 0; i < listeEnnemi.size(); ++i)
         {
@@ -345,6 +348,146 @@ void manageInvaders ()
     else
         ++KTour;
 }
+
+struct torpille
+{
+    unsigned id;
+    char carTorpille = KTorpedo;
+    unsigned posX;
+    unsigned posY;
+    unsigned dmg;
+    bool isAlive = false;
+};
+
+torpille creerTorpille (unsigned id, unsigned posX, unsigned posY, string classeTorpille)
+{
+    torpille Torpille;
+    Torpille.id = id;
+    Torpille.isAlive = true;
+    Torpille.posX = posX;
+    Torpille.posY = posY;
+    if (classeTorpille == "ranger")
+    {
+        Torpille.dmg = 3;
+        Torpille.carTorpille = KBalle;
+    }
+    else
+        Torpille.dmg = 1;
+
+    return Torpille;
+}
+
+vector<torpille> listeTorpilles;
+bool salveEnCours;
+
+void shootTorpille ()
+{
+    unsigned maxY = 1;
+    if (!salveEnCours)
+    {
+        for (unsigned i = 0; i < listeEnnemi.size(); ++i)
+        {
+            if (listeEnnemi[i].posY > maxY && listeEnnemi[i].isAlive)
+                maxY = listeEnnemi[i].posY;
+        }
+        for (unsigned j = 0; j < listeEnnemi.size(); ++j)
+        {
+            if (listeEnnemi[j].posY == maxY && listeEnnemi[j].isAlive && listeEnnemi[j].classe != "tank")
+            {
+                listeTorpilles.push_back(creerTorpille(listeEnnemi[j].id, listeEnnemi[j].posX, listeEnnemi[j].posY, listeEnnemi[j].classe));
+            }
+        }
+        salveEnCours = true;
+    }
+}
+
+void manageTorpille ()
+{
+    for (unsigned i = 0; i < listeTorpilles.size(); ++i)
+    {
+        ++listeTorpilles[i].posY;
+        if (listeTorpilles[i].posX == vaisseauJoueur.posX && listeTorpilles[i].posY == vaisseauJoueur.posY)
+        {
+            if (listeTorpilles[i].dmg > vaisseauJoueur.pv)
+                vaisseauJoueur.pv = 0;
+            else
+                vaisseauJoueur.pv = vaisseauJoueur.pv - listeTorpilles[i].dmg;
+
+            if (score < 100)
+                score = 0;
+            else
+                score = score - 100;
+
+            listeTorpilles[i].isAlive = false;
+        }
+    }
+
+    for (unsigned j = 0; j < listeTorpilles.size(); ++j)
+        if (!listeTorpilles[j].isAlive || listeTorpilles[j].posY > nColonnes)
+        {
+            listeTorpilles.erase(listeTorpilles.begin()+j);
+        }
+    if (listeTorpilles.size() == 0)
+        salveEnCours = false;
+}
+
+/*!
+ * \brief shootMissile
+ * \param listeEnnemi
+ */
+void shootMissile(){
+
+  if (Missile.isAlive == true){
+     --Missile.posY;
+
+      for (unsigned k = 0; k < listeEnnemi.size(); ++k)
+        if(Missile.posX == listeEnnemi[k].posX && Missile.posY == listeEnnemi[k].posY && Missile.isAlive == true && listeEnnemi[k].isAlive == true ){
+            cout << k;
+            Missile.isAlive = false;
+            Missile.posY = 0;
+            Missile.posX = 0;
+            --listeEnnemi[k].hp;
+            if(listeEnnemi[k].hp == 0){
+                listeEnnemi[k].isAlive = false;
+                score = score + 300;
+            }
+        }
+      if(Missile.posY == 0){
+          Missile.isAlive = false;
+      }
+   }
+}
+
+/*!
+ * \brief deplacementHero
+ */
+void manageHero(){
+    char Key;
+    set_input_mode();
+    for( unsigned i = 0; i<1; i++){
+        read (STDIN_FILENO, &Key, 1);
+        if( Key == KLeft && vaisseauJoueur.posX != 1){
+            vaisseauJoueur.posX = vaisseauJoueur.posX - 1;
+        }
+        else if(Key == KRight && vaisseauJoueur.posX != nColonnes - 2){
+            vaisseauJoueur.posX = vaisseauJoueur.posX + 1;
+        }
+        else if( Key == KShoot && !Missile.isAlive){
+        {
+            Missile.isAlive = true;
+            Missile.posY = vaisseauJoueur.posY;
+            Missile.posX = vaisseauJoueur.posX;
+            shootTorpille();
+        }
+        }
+    }
+}
+
+void ClearScreen ()
+{
+    cout << "\033[H\033[2J";
+}
+
 /*!
  * \brief afficherTableau
  * \param listeEnnemi
@@ -379,39 +522,32 @@ void afficherTableau(){
                 {
                     if (j == listeEnnemi[k].posX && i == listeEnnemi[k].posY)
                     {
-                        if(listeEnnemi[k].isAlive == true){
+                        if(listeEnnemi[k].isAlive == true)
                             tableau[j][i] = listeEnnemi[k].carInvader;
-                        }
-                        else{
-                            tableau[j][i] = ' ';
-                        }
-
                     }
-                    else if (j == MyHero.posX && i == MyHero.posY)
-                    {
-                        if(MyHero.isAlive == true){
-                            tableau[j][i] = MyHero.carVaisseau;
-                        }
-                        else{
-                            tableau[j][i] = ' ';
-                        }
+                 }
 
-                    }
-                    else if((j == Missile.posX && i == Missile.posY))
-                    {
-                        if(Missile.isAlive == true){
-                            tableau[j][i] = Missile.carMissile;
-                        }
-                        else{
-                            tableau[j][i] = ' ';
-                        }
-                    }
-
+                for (unsigned l = 0; l < listeTorpilles.size(); ++l)
+                {
+                    if (j == listeTorpilles[l].posX && i == listeTorpilles[l].posY)
+                        tableau[j][i] = listeTorpilles[l].carTorpille;
                 }
+                 if (j == vaisseauJoueur.posX && i == vaisseauJoueur.posY)
+                 {
+                     if(vaisseauJoueur.isAlive == true)
+                     tableau[j][i] = vaisseauJoueur.carVaisseau;
 
+                 }
+                 if((j == Missile.posX && i == Missile.posY))
+                 {
+                      if(Missile.isAlive == true)
+                      tableau[j][i] = Missile.carMissile;
+
+                  }
+                }
             }
         }
-    }
+
 
     // Création des coins
     tableau[0][0] = coinCadre;
@@ -428,82 +564,136 @@ void afficherTableau(){
     }
 }
 
+struct tabHighScore {
+    string nomJoueur;
+    unsigned score;
+};
 
-/*!
- * \brief Shoot
- * \param listeEnnemi
- */
-void Shoot(){
+bool isHigher (tabHighScore joueur1, tabHighScore joueur2)
+{
+    return joueur1.score <= joueur2.score;
+}
 
-  if (Missile.isAlive == true){
-     --Missile.posY;
 
-      for (unsigned k = 0; k < listeEnnemi.size(); ++k)
-        if(Missile.posX == listeEnnemi[k].posX && Missile.posY == listeEnnemi[k].posY && Missile.isAlive == true && listeEnnemi[k].isAlive == true ){
-            cout << k;
-            Missile.isAlive = false;
-            Missile.posY = 0;
-            Missile.posX = 0;
-            --listeEnnemi[k].hp;
-            if(listeEnnemi[k].hp == 0){
-                listeEnnemi[k].isAlive = false;
-            }
-        }
-      if(Missile.posY == 0){
-          Missile.isAlive = false;
-      }
+void ecritureDansFichier(string nomJoueur, unsigned score)
+{
+   ofstream fichier("../SpaceInvaders/score.txt",ios::out | ios::app);
+   if(fichier)
+   {
+       fichier << score << "," << nomJoueur << endl;
+   }
+   fichier.close();
+}
+
+void clearFichier ()
+{
+    ofstream ofs;
+    ofs.open("../SpaceInvaders/score.txt",ofstream::out | ofstream::trunc);
+    ofs.close();
+}
+
+void triHighScore()
+{
+   ifstream fichier("../SpaceInvaders/score.txt", ios::in);  // on ouvre en lecture
+
+   if(fichier)  // si l'ouverture a fonctionné
+   {
+       string ligne;
+       unsigned score;
+       string nomJoueur;
+       vector<tabHighScore> tabScores;
+       unsigned i = 0;
+       while(getline(fichier, ligne))  // tant que l'on peut mettre la ligne dans "contenu"
+       {
+           while(ligne[i] != ',')
+           {
+               score = score + unsigned(ligne[i]);
+               ++i;
+           }
+           for (unsigned j = i+1; j < ligne.size(); ++i)
+           {
+               nomJoueur = nomJoueur + ligne[j];
+           }
+           tabScores[i].nomJoueur = nomJoueur;
+           tabScores[i].score = score;
+           score = 0;
+           nomJoueur.clear();
+       }
+       sort(tabScores.begin(),tabScores.end(),isHigher);
+       clearFichier();
+       fichier.close();
+       for (unsigned i = 0; i < tabScores.size(); ++i)
+       {
+           ecritureDansFichier(tabScores[i].nomJoueur, tabScores[i].score);
+       }
+   }
+   else
+   {
+       cerr << "Impossible d'ouvrir le fichier !" << endl;
    }
 }
 
-/*!
- * \brief deplacementHero
- */
-void manageHero(){
-    char Key;
-    set_input_mode();
-    for( unsigned i = 0; i<1; i++){
-        read (STDIN_FILENO, &Key, 1);
-        if( MyHero.posX < 20 && MyHero.posX > 0 ){
-            if( Key == KLeft){
+void affichageHighScore()
+{
+    ifstream fichier("../SpaceInvaders/score.txt", ios::in);
 
-                MyHero.posX = MyHero.posX - 1;
-                afficherTableau();
-            }
-            else if( Key == KRight){
-                MyHero.posX = MyHero.posX + 1;
-                afficherTableau();
-            }
-            else if( Key == KShoot){
-                Missile.isAlive = true;
-                Missile.posY = MyHero.posY+1;
-                Missile.posX = MyHero.posX;
-                Shoot();
-                afficherTableau();
-            }
-
+    string ligne;
+    string score;
+    string nomJoueur;
+    unsigned i = 0;
+    unsigned classement = 1;
+    while (getline(fichier,ligne) && classement <= 10)
+    {
+        while(ligne[i] != ',')
+        {
+            score = score + ligne[i];
+            ++i;
         }
+        for (unsigned j = i+1; j < ligne.size(); ++i)
+        {
+            nomJoueur = nomJoueur + ligne[j];
+        }
+        cout << classement << ". " << nomJoueur << " ....... " << score << endl;
+        nomJoueur.clear();
+        score.clear();
+        ++classement;
     }
+    fichier.close();
 }
 
 int main()
 {
+    afficherTableau();
+    bool gameOver = false;
+    while(gameOver == false)
+    {
+        manageHero();
+        manageInvaders();
+        shootMissile();
+        shootTorpille();
+        manageTorpille();
         afficherTableau();
-        bool gameOver = false;
-        while(gameOver == false)
+        cout << endl << "HP - " << vaisseauJoueur.pv << endl;
+        cout << endl << "SCORE - " << score << endl;
+        reset_input_mode();
+        if (vaisseauJoueur.pv <= 0)
+            gameOver = true;
+        for (unsigned i = 0; i < listeEnnemi.size(); ++i)
         {
-            manageHero();
-            manageInvaders();
-            Shoot();
-            afficherTableau();
-            for (unsigned i = 0; i < listeEnnemi.size(); ++i)
+            if (listeEnnemi[i].posY == vaisseauJoueur.posY && listeEnnemi[i].isAlive == true)
             {
-                if (listeEnnemi[i].posY == MyHero.posY && listeEnnemi[i].isAlive == true)
-                {
-                    gameOver = true;
-                    cout << "c fini chacal";
-                }
-
+                gameOver = true;
             }
-            this_thread::sleep_for(framerate);
         }
+    }
+    ClearScreen();
+    cout << "GAME OVER" << endl << endl;
+    cout << "Entre ton nom: ";
+    string nomJoueur;
+    getline(cin,nomJoueur);
+    cout << nomJoueur << "! Ton score est de " << score <<" point(s). Bravo!" << endl << endl;
+    ecritureDansFichier(nomJoueur,score);
+    triHighScore();
+    cout << "Voici le top 10 des meilleurs scores :" << endl << endl;
+    affichageHighScore();
 }
