@@ -475,9 +475,9 @@ void manageHero(){
         else if( Key == KShoot && !Missile.isAlive){
         {
             Missile.isAlive = true;
-            Missile.posY = vaisseauJoueur.posY;
+            Missile.posY = vaisseauJoueur.posY+1;
             Missile.posX = vaisseauJoueur.posX;
-            shootTorpille();
+            shootMissile();
         }
         }
     }
@@ -665,6 +665,7 @@ int main()
 {
     afficherTableau();
     bool gameOver = false;
+    unsigned invadersVivants = 0;
     while(gameOver == false)
     {
         manageHero();
@@ -681,10 +682,13 @@ int main()
         for (unsigned i = 0; i < listeEnnemi.size(); ++i)
         {
             if (listeEnnemi[i].posY == vaisseauJoueur.posY && listeEnnemi[i].isAlive == true)
-            {
                 gameOver = true;
-            }
+            if (listeEnnemi[i].isAlive)
+                ++invadersVivants;
+            if (invadersVivants == 0)
+                gameOver = true;
         }
+        invadersVivants = 0;
     }
     ClearScreen();
     cout << "GAME OVER" << endl << endl;
