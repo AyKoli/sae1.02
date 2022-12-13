@@ -1,2 +1,2 @@
-# sae1.02
+# Space Invaders C++
 sae 1.02
